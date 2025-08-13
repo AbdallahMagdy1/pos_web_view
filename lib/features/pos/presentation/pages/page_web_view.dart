@@ -16,8 +16,9 @@ class PosWebViewPage extends StatelessWidget {
     return BlocProvider(
       create: (context) => PosBloc(
         repository: PosRepositoryImpl(
-          localDataSource: BluetoothPrinterDataSource(),
+          localDataSource: NetworkPrinterDataSource(),
         ),
+        localDataSource: NetworkPrinterDataSource(),
       ),
       child: const _PosWebViewView(),
     );
@@ -77,11 +78,11 @@ class _PosWebViewViewState extends State<_PosWebViewView> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Color(0xff4455aa),
+      backgroundColor: const Color(0xff4455aa),
       appBar: AppBar(
-        backgroundColor: Color(0xff445566),
+        backgroundColor: const Color(0xff445566),
         title: const Text('Concha Hotel POS'),
-        actions: [PrinterConnectionButton()],
+        actions: const [PrinterConnectionButton()],
       ),
       body: WebViewWidget(controller: _controller),
     );

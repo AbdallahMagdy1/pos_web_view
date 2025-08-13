@@ -4,15 +4,13 @@ import 'package:pos/features/pos/presentation/pages/page_web_view.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  await _requestBluetoothPermissions();
+  await _requestPermissions();
   runApp(const MyApp());
 }
 
-Future<void> _requestBluetoothPermissions() async {
-  await Permission.bluetooth.request();
-  await Permission.bluetoothConnect.request();
-  await Permission.bluetoothScan.request();
-  await Permission.location.request();
+Future<void> _requestPermissions() async {
+  await Permission.storage.request();
+  await Permission.manageExternalStorage.request();
 }
 
 class MyApp extends StatelessWidget {

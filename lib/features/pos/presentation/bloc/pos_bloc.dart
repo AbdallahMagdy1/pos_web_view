@@ -1,5 +1,7 @@
 import 'package:equatable/equatable.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:pos/features/pos/data/data_sources/failure.dart';
+import 'package:pos/features/pos/data/data_sources/printer_local_data_source.dart';
 import 'package:pos/features/pos/data/repo/pos_repo.dart';
 import 'package:pos/features/pos/domain/enitity/print_data.dart';
 
@@ -10,7 +12,11 @@ abstract class PosEvent extends Equatable {
   List<Object> get props => [];
 }
 
-class ConnectPrinterEvent extends PosEvent {}
+class ConnectPrinterEvent extends PosEvent {
+  final String ip;
+  final int port;
+  const ConnectPrinterEvent({required this.ip, required this.port});
+}
 
 class PrintReceiptEvent extends PosEvent {
   final PrintData printData;
@@ -45,8 +51,10 @@ class PrintingError extends PosState {
 
 class PosBloc extends Bloc<PosEvent, PosState> {
   final PosRepository repository;
+  final PrinterLocalDataSource localDataSource;
 
-  PosBloc({required this.repository}) : super(PosInitial()) {
+  PosBloc({required this.repository, required this.localDataSource})
+    : super(PosInitial()) {
     on<ConnectPrinterEvent>(_onConnectPrinter);
     on<PrintReceiptEvent>(_onPrintReceipt);
     on<CheckConnectionEvent>(_onCheckConnection);
@@ -57,12 +65,19 @@ class PosBloc extends Bloc<PosEvent, PosState> {
     Emitter<PosState> emit,
   ) async {
     emit(PrinterConnecting());
-    final result = await repository.connectToPrinter();
-    result.fold(
-      (failure) => emit(PrinterDisconnected()),
-      (connected) =>
-          emit(connected ? PrinterConnected() : PrinterDisconnected()),
-    );
+    try {
+      final connected = await localDataSource.connect(
+        ip: event.ip,
+        port: event.port,
+      );
+      if (connected) {
+        emit(PrinterConnected());
+      } else {
+        emit(PrinterDisconnected());
+      }
+    } catch (e) {
+      emit(PrintingError('Failed to connect: ${e.toString()}'));
+    }
   }
 
   Future<void> _onPrintReceipt(
@@ -70,22 +85,32 @@ class PosBloc extends Bloc<PosEvent, PosState> {
     Emitter<PosState> emit,
   ) async {
     emit(PrintingInProgress());
-    final result = await repository.printZPLReceipt(event.printData);
-    result.fold(
-      (failure) => emit(PrintingError('Printing failed')),
-      (success) => emit(PrintingSuccess()),
-    );
+    try {
+      final result = await repository.printReceipt(event.printData);
+
+      result.fold(
+        (l) {
+          emit(PrintingError('Printing failed'));
+          return NetworkFailure();
+        },
+        (r) {
+          emit(PrintingSuccess());
+        },
+      );
+    } catch (e) {
+      emit(PrintingError('Printing error: ${e.toString()}'));
+    }
   }
 
   Future<void> _onCheckConnection(
     CheckConnectionEvent event,
     Emitter<PosState> emit,
   ) async {
-    final result = await repository.isPrinterConnected();
-    result.fold(
-      (failure) => emit(PrinterDisconnected()),
-      (connected) =>
-          emit(connected ? PrinterConnected() : PrinterDisconnected()),
-    );
+    try {
+      final connected = await localDataSource.checkConnection();
+      emit(connected ? PrinterConnected() : PrinterDisconnected());
+    } catch (e) {
+      emit(PrinterDisconnected());
+    }
   }
 }

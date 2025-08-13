@@ -1,4 +1,3 @@
-import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:pos/features/pos/domain/enitity/print_data.dart';
@@ -41,7 +40,7 @@ class PrinterConnectionButton extends StatelessWidget {
                   children: [
                     Text(
                       state is PrinterConnected
-                          ? 'Printer is connected'
+                          ? 'Printer is connected to 192.168.1.190'
                           : 'Printer is disconnected',
                     ),
                     const SizedBox(height: 20),
@@ -61,7 +60,9 @@ class PrinterConnectionButton extends StatelessWidget {
               ),
               if (bloc.state is! PrinterConnected)
                 TextButton(
-                  onPressed: () => bloc.add(ConnectPrinterEvent()),
+                  onPressed: () => bloc.add(
+                    ConnectPrinterEvent(ip: '192.168.1.190', port: 9100),
+                  ),
                   child: const Text('Connect'),
                 ),
             ],
@@ -75,8 +76,8 @@ class PrinterConnectionButton extends StatelessWidget {
     final printData = PrintData(
       placeName: 'Concha Hotel',
       items: const [
-        PrintItem(name: 'Room Service', quantity: 1, price: 25.99),
-        PrintItem(name: 'Mini Bar', quantity: 2, price: 8.50),
+        PrintItem(name: 'wowwowo', quantity: 1, price: 25.99),
+        PrintItem(name: 'wopopop', quantity: 2, price: 8.50),
       ],
       total: 42.99,
     );

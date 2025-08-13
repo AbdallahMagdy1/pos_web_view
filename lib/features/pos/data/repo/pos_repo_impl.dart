@@ -12,38 +12,25 @@ class PosRepositoryImpl implements PosRepository {
   @override
   Future<Either<Failure, bool>> connectToPrinter() async {
     try {
-      final result = await localDataSource.connect();
+      final result = await localDataSource.connect(
+        ip: '192.168.1.190',
+        port: 9100,
+      );
       return Right(result);
     } catch (e) {
-      return Left(NetworkFailure());
+      return Left(PrinterConnectionFailure(e.toString()));
     }
   }
 
   @override
-  Future<Either<Failure, bool>> printZPLReceipt(PrintData printData) async {
+  Future<Either<Failure, bool>> printReceipt(PrintData printData) async {
+    // Changed from printZPLReceipt
     try {
-      final zplCode = _generateZPL(printData);
-      final result = await localDataSource.printZPL(zplCode);
+      final result = await localDataSource.printReceipt(printData);
       return Right(result);
     } catch (e) {
-      return Left(PrintFailure());
+      return Left(PrintFailure(e.toString()));
     }
-  }
-
-  String _generateZPL(PrintData data) {
-    // Simple ZPL generation
-    final items = data.items
-        .map((item) => '${item.name} x${item.quantity} \$${item.price}')
-        .join('\n');
-
-    return '''
-^XA
-^FO50,50^A0N,50,50^FD${data.placeName}^FS
-^FO50,120^A0N,30,30^FD${DateTime.now().toString()}^FS
-^FO50,180^A0N,30,30^FD${items}^FS
-^FO50,400^A0N,40,40^FDTotal: \$${data.total}^FS
-^XZ
-''';
   }
 
   @override
@@ -52,7 +39,7 @@ class PosRepositoryImpl implements PosRepository {
       final result = await localDataSource.checkConnection();
       return Right(result);
     } catch (e) {
-      return Left(NetworkFailure());
+      return Left(PrinterConnectionFailure(e.toString()));
     }
   }
 }
